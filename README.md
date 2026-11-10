@@ -7,7 +7,7 @@ tonemapuje do 8-bitowego sRGB.
 ## Architektura
 
 - `package/` — zwykły KPackage `Plasma/Wallpaper` (pojawia się w Ustawieniach →
-  Tapeta jako „Wideo (HDR)"); jego `main.qml` nie rysuje NIC (przezroczystość),
+  Tapeta jako „Wideo Wallpaper"); jego `main.qml` nie rysuje NIC (przezroczystość),
   tylko osadza element `HdrVideoSurface`.
 - `src/` — moduł QML z natywnym backendem: `HdrVideoSurface` (QQuickItem)
   tworzy **wl_subsurface na oknie pulpitu plasmashell** (`place_above` —

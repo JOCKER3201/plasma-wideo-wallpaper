@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0
+      http://www.kde.org/standards/kcfg/1.0/kcfg.xsd" >
+  <kcfgfile name=""/>
+
+  <group name="General">
+    <entry name="VideoFile" type="String">
+      <label>Video file path</label>
+      <default></default>
+    </entry>
+    <entry name="HdrMode" type="Int">
+      <label>HDR mode: 0=auto, 1=force, 2=off</label>
+      <default>0</default>
+    </entry>
+    <entry name="Peak" type="Int">
+      <label>Target peak luminance (nits)</label>
+      <default>1000</default>
+    </entry>
+    <entry name="Sdr2Hdr" type="Bool">
+      <label>Upconvert SDR content to HDR</label>
+      <default>false</default>
+    </entry>
+    <entry name="Contain" type="Bool">
+      <label>Letterbox instead of crop</label>
+      <default>false</default>
+    </entry>
+  </group>
+
+</kcfg>

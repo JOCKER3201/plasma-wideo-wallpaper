@@ -1,0 +1,25 @@
+{
+    "KPackageStructure": "Plasma/Wallpaper",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "JOCKER3201 + Claude"
+            }
+        ],
+        "Category": "",
+        "Description": "Tapeta wideo z obsługą HDR (libmpv, PQ passthrough)",
+        "Icon": "preferences-desktop-wallpaper",
+        "Id": "io.github.jocker3201.hdrvideo",
+        "License": "MIT",
+        "Name": "Wideo Wallpaper",
+        "Version": "0.1.0",
+        "Website": "https://github.com/JOCKER3201/plasma-wideo-wallpaper"
+    },
+    "Keywords": [
+        "video",
+        "hdr",
+        "wallpaper"
+    ],
+    "X-KDE-ParentApp": "org.kde.plasmashell",
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

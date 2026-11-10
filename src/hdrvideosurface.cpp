@@ -88,6 +88,7 @@ struct HdrVideoSurface::Worker
 
     QPointer<HdrVideoSurface> item;
     std::thread thr;
+    bool below = false; // pod oknem pulpitu (wymaga ARGB okna — shim LD_PRELOAD)
 
     // --- stan wątku workera ---
     wl_display *dpy = nullptr;
@@ -285,11 +286,14 @@ struct HdrVideoSurface::Worker
         wl_region_destroy(full);
 
         subsurf = wl_subcompositor_get_subsurface(subcomp, surf, parent);
-        // place_above, nie place_below: okno pulpitu plasmashell (DesktopView) ma
-        // nieprzezroczysty bufor (format bez użytecznej alphy) i zasłania wszystko
-        // pod sobą — wideo musi być nad nim. Kliknięcia i tak przechodzą do pulpitu
-        // (pusty input region), a efekty KWin animują subsurface razem z oknem.
-        wl_subsurface_place_above(subsurf, parent);
+        // Gdy okno pulpitu ma kanał alfa (shim LD_PRELOAD + clear transparent):
+        // place_below — wideo pod buforem pulpitu, ikony Folder View zostają NAD.
+        // Bez alfy bufor pulpitu jest nieprzezroczysty i kryłby wideo — wtedy
+        // place_above (kliknięcia i tak przechodzą przez pusty input region).
+        if (below)
+            wl_subsurface_place_below(subsurf, parent);
+        else
+            wl_subsurface_place_above(subsurf, parent);
         wl_subsurface_set_desync(subsurf);
 
         int logW, logH, pxW, pxH, posX, posY;
@@ -588,10 +592,18 @@ void HdrVideoSurface::maybeStart()
         return;
     }
 
+    const int alphaBits = window()->format().alphaBufferSize();
+    const bool below = alphaBits > 0;
+    fprintf(stderr, "[hdrvideo] okno pulpitu: alfa %d bit → %s\n", alphaBits,
+            below ? "place_below (ikony nad wideem)" : "place_above");
+    if (below)
+        window()->setColor(Qt::transparent); // piksele bez treści = alfa 0
+
     m_worker = std::make_unique<Worker>();
     m_worker->item = this;
     m_worker->dpy = dpy;
     m_worker->parent = parentSurf;
+    m_worker->below = below;
     int p[2];
     if (pipe(p) != 0)
         return;

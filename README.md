@@ -10,14 +10,20 @@ tonemapuje do 8-bitowego sRGB.
   Tapeta jako „Wideo Wallpaper"); jego `main.qml` nie rysuje NIC (przezroczystość),
   tylko osadza element `HdrVideoSurface`.
 - `src/` — moduł QML z natywnym backendem: `HdrVideoSurface` (QQuickItem)
-  tworzy **wl_subsurface na oknie pulpitu plasmashell** (`place_above` —
-  DesktopView ma nieprzezroczysty bufor, więc wariant `place_below` jest
-  niewidoczny; kliknięcia przechodzą do pulpitu dzięki pustemu input region),
-  renderuje przez **libmpv** (OpenGL render API, EGL, `hwdec=auto-copy` →
-  NVDEC/VAAPI) i deklaruje **BT.2020 + ST2084** na powierzchni przez
+  tworzy **wl_subsurface na oknie pulpitu plasmashell**, renderuje przez
+  **libmpv** (OpenGL render API, EGL, `hwdec=auto-copy` → NVDEC/VAAPI)
+  i deklaruje **BT.2020 + ST2084** na powierzchni przez
   `wp-color-management-v1`. Efekty KWin (Przegląd) animują okno razem
-  z subsurface, a HDR przechodzi 1:1 do kompozytora. Ikony pulpitu (Widok
-  katalogu) byłyby zakryte przez wideo — używaj układu „Pulpit".
+  z subsurface, a HDR przechodzi 1:1 do kompozytora. Kliknięcia przechodzą
+  do pulpitu (pusty input region).
+- **Ikony pulpitu nad wideem**: plugin sam wykrywa, czy okno pulpitu ma kanał
+  alfa. Jeśli tak — subsurface idzie `place_below`, okno robi clear na
+  przezroczysto i ikony (Widok katalogu) zostają NAD wideem. DesktopView
+  domyślnie alfy nie ma, więc w zestawie jest `libhdrvideo-alpha.so` — shim
+  LD_PRELOAD ustawiający `QQuickWindow::setDefaultAlphaBuffer(true)` przed
+  startem plasmashell (wrapper `~/.local/bin/plasmashell` wstrzykuje go
+  automatycznie; bez shima plugin spada na `place_above` — wszystko działa,
+  tylko ikony byłyby zakryte).
 - Tryby: auto (detekcja `video-params` po `VIDEO_RECONFIG`), wymuszony HDR, SDR;
   `Sdr2Hdr` = inverse tone mapping; `Peak` = target-peak mpv; `Contain` = pasy.
 
@@ -28,6 +34,8 @@ cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 ninja -C build
 ln -sfn $PWD/package ~/.local/share/plasma/wallpapers/io.github.jocker3201.hdrvideo
 # moduł QML ładowany przez QML2_IMPORT_PATH → ~/.config/plasma-workspace/env/hdrvideo-import.sh
+# ikony nad wideem (opcjonalnie): wrapper ~/.local/bin/plasmashell z
+#   LD_PRELOAD=$PWD/build/libhdrvideo-alpha.so exec /usr/bin/plasmashell "$@"
 ```
 
 Wymagane: qt6-qtbase-devel, qt6-qtdeclarative-devel, wayland-devel,

@@ -41,6 +41,10 @@ qt_add_qml_module(hdrvideoplugin
         ${GEN}/viewporter-protocol.c
 )
 
+# Shim LD_PRELOAD dla plasmashell: ARGB okna -> ikony pulpitu nad wideem (place_below)
+add_library(hdrvideo-alpha SHARED src/alpha_preload.cpp)
+target_link_libraries(hdrvideo-alpha PRIVATE Qt6::Quick)
+
 # qmltyperegistrar nie wstawia include naszej klasy do wygenerowanej rejestracji —
 # wymuszamy nagłówek dla całego targetu.
 target_compile_options(hdrvideoplugin PRIVATE

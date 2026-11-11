@@ -1,8 +1,9 @@
-// HdrCapabilities — lekka sonda możliwości HDR dla UI konfiguracji tapety.
-// Otwiera WŁASNE, krótkie połączenie Wayland (bez dotykania toru Qt),
-// sprawdza: protokół wp-color-management-v1, wsparcie PQ/BT.2020 oraz
-// per-ekran, czy wyjście faktycznie pracuje w HDR (transfer PQ na opisie
-// obrazu wyjścia). config.qml wyszarza opcje HDR i pokazuje `reason`.
+// HdrCapabilities — a lightweight HDR capability probe for the wallpaper's
+// configuration UI. It opens its OWN short-lived Wayland connection (without
+// touching the Qt pipeline) and checks: the wp-color-management-v1 protocol,
+// PQ/BT.2020 support, and per screen whether the output actually runs in HDR
+// (PQ transfer on the output's image description). config.qml greys out the
+// HDR options and shows `reason`.
 #pragma once
 
 #include <QObject>

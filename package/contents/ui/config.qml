@@ -3,12 +3,13 @@
 
     SPDX-License-Identifier: MIT
 
-    UI konfiguracji tapety "HDR Video" (io.github.jocker3201.hdrvideo).
+    Configuration UI of the "HDR Video" wallpaper (io.github.jocker3201.hdrvideo).
 
-    Konwencja cfg_: dialog konfiguracji Plasmy (ConfigurationContainmentAppearance.qml)
-    przy otwarciu wstrzykuje wartości kluczy z contents/config/main.xml do właściwości
-    cfg_<Klucz> jako initial properties, a przy OK/Zastosuj zapisuje je z powrotem do
-    wallpaperConfiguration. Typy właściwości MUSZĄ zgadzać się z typami kcfg.
+    The cfg_ convention: on open, Plasma's configuration dialog
+    (ConfigurationContainmentAppearance.qml) injects the values of the keys from
+    contents/config/main.xml into cfg_<Key> properties as initial properties, and
+    on OK/Apply it writes them back to wallpaperConfiguration. The property types
+    MUST match the kcfg types.
 */
 
 import QtQuick
@@ -21,38 +22,39 @@ import io.github.jocker3201.hdrvideo 1.0
 Kirigami.FormLayout {
     id: root
 
-    // Sonda możliwości HDR (protokół, PQ/BT.2020, tryb HDR ekranów) — gdy HDR
-    // nie może działać, opcje HDR są wyszarzone, a InlineMessage mówi dlaczego.
+    // HDR capability probe (protocol, PQ/BT.2020, screens' HDR mode) — when HDR
+    // cannot work, the HDR options are greyed out and an InlineMessage says why.
     HdrCapabilities {
         id: hdrCaps
     }
 
-    // Wyrównanie kolumn z pozostałymi FormLayoutami dialogu; "parentLayout" to
-    // właściwość przodka o id "appearanceRoot" (kontekst dialogu), jak w org.kde.color.
+    // Column alignment with the dialog's other FormLayouts; "parentLayout" is a
+    // property of the ancestor with id "appearanceRoot" (dialog context), as in
+    // org.kde.color.
     twinFormLayouts: parentLayout
     property alias formLayout: root
 
-    // Wstrzykiwane przez dialog jako initial properties (deklaracja wycisza ostrzeżenia).
+    // Injected by the dialog as initial properties (declaring them silences warnings).
     property var configDialog
     property var wallpaperConfiguration
 
-    // Klucze z main.xml, grupa General — typy zgodne z kcfg.
-    property string cfg_VideoFile   // String: ścieżka/URL pliku wideo
-    property int cfg_HdrMode        // Int: 0=auto, 1=wymuś HDR, 2=SDR (off)
-    property int cfg_Peak           // Int: szczytowa luminancja w nitach
-    property bool cfg_Sdr2Hdr       // Bool: inverse tone mapping SDR→HDR
-    property bool cfg_Contain       // Bool: dopasowanie z pasami zamiast kadrowania
+    // Keys from main.xml, group General — types matching the kcfg.
+    property string cfg_VideoFile   // String: path/URL of the video file
+    property int cfg_HdrMode        // Int: 0=auto, 1=force HDR, 2=SDR (off)
+    property int cfg_Peak           // Int: peak luminance in nits
+    property bool cfg_Sdr2Hdr       // Bool: SDR→HDR inverse tone mapping
+    property bool cfg_Contain       // Bool: letterboxed fit instead of cropping
 
-    // Pseudo-klucze <Klucz>Default z KConfigPropertyMap (wzorzec org.kde.image);
-    // dirty-check dialogu pomija właściwości kończące się na "Default".
+    // <Key>Default pseudo-keys from KConfigPropertyMap (org.kde.image pattern);
+    // the dialog's dirty-check skips properties ending in "Default".
     property string cfg_VideoFileDefault
     property int cfg_HdrModeDefault
     property int cfg_PeakDefault
     property bool cfg_Sdr2HdrDefault
     property bool cfg_ContainDefault
 
-    // Re-synchronizacja kontrolek, gdy cfg_* zmieni się poza nimi
-    // (np. przycisk "Przywróć domyślne" w dialogu).
+    // Re-synchronize the controls when cfg_* changes outside of them
+    // (e.g. the dialog's "Restore defaults" button).
     onCfg_VideoFileChanged: if (videoFileField.text !== cfg_VideoFile) {
         videoFileField.text = cfg_VideoFile;
     }
@@ -68,7 +70,7 @@ Kirigami.FormLayout {
     }
 
     RowLayout {
-        Kirigami.FormData.label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Plik wideo:")
+        Kirigami.FormData.label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Video file:")
         Layout.fillWidth: true
         spacing: Kirigami.Units.smallSpacing
 
@@ -76,13 +78,13 @@ Kirigami.FormLayout {
             id: videoFileField
             Layout.fillWidth: true
             text: root.cfg_VideoFile
-            placeholderText: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Ścieżka lub adres URL pliku wideo")
+            placeholderText: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Path or URL of the video file")
             onTextEdited: root.cfg_VideoFile = text
         }
 
         QQC2.Button {
             icon.name: "document-open"
-            text: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Wybierz...")
+            text: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Browse...")
             onClicked: {
                 if (root.cfg_VideoFile.startsWith("file://")) {
                     fileDialog.selectedFile = root.cfg_VideoFile;
@@ -94,14 +96,14 @@ Kirigami.FormLayout {
 
     QQC2.ComboBox {
         id: hdrModeComboBox
-        Kirigami.FormData.label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Tryb HDR:")
+        Kirigami.FormData.label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "HDR mode:")
         enabled: hdrCaps.usable
         textRole: "label"
         valueRole: "value"
-        // Wartości zgodne z kontraktem HdrVideoSurface.hdrMode: 0=auto, 1=force, 2=off.
+        // Values follow the HdrVideoSurface.hdrMode contract: 0=auto, 1=force, 2=off.
         model: [
-            { label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Automatyczny"), value: 0 },
-            { label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Wymuś HDR"), value: 1 },
+            { label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Automatic"), value: 0 },
+            { label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Force HDR"), value: 1 },
             { label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "SDR"), value: 2 }
         ]
         onActivated: root.cfg_HdrMode = currentValue
@@ -110,7 +112,7 @@ Kirigami.FormLayout {
 
     QQC2.SpinBox {
         id: peakSpinBox
-        Kirigami.FormData.label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Jasność szczytowa (nity):")
+        Kirigami.FormData.label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Peak brightness (nits):")
         enabled: hdrCaps.usable
         from: 100
         to: 10000
@@ -134,7 +136,7 @@ Kirigami.FormLayout {
 
     QQC2.CheckBox {
         id: containCheckBox
-        text: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Dopasuj z pasami (contain)")
+        text: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Fit with letterboxing (contain)")
         checked: root.cfg_Contain
         onToggled: root.cfg_Contain = checked
     }
@@ -143,7 +145,7 @@ Kirigami.FormLayout {
         Kirigami.FormData.isSection: true
     }
 
-    // Dlaczego HDR nie działa (wyszarzone opcje wyżej) / status ekranów.
+    // Why HDR does not work (options above greyed out) / screen status.
     Kirigami.InlineMessage {
         Layout.fillWidth: true
         visible: !hdrCaps.usable
@@ -159,12 +161,12 @@ Kirigami.FormLayout {
 
     QtDialogs.FileDialog {
         id: fileDialog
-        title: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Wybierz plik wideo")
+        title: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Choose a video file")
         fileMode: QtDialogs.FileDialog.OpenFile
         options: QtDialogs.FileDialog.ReadOnly
         nameFilters: [
-            i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Pliki wideo") + " (*.mp4 *.mkv *.webm *.mov)",
-            i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Wszystkie pliki") + " (*)"
+            i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Video files") + " (*.mp4 *.mkv *.webm *.mov)",
+            i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "All files") + " (*)"
         ]
         onAccepted: root.cfg_VideoFile = selectedFile.toString()
     }

@@ -7,11 +7,11 @@
             }
         ],
         "Category": "",
-        "Description": "Tapeta wideo z obsługą HDR (libmpv, PQ passthrough)",
+        "Description": "Video wallpaper with HDR support (libmpv, PQ passthrough)",
         "Icon": "preferences-desktop-wallpaper",
         "Id": "io.github.jocker3201.hdrvideo",
         "License": "MIT",
-        "Name": "Wideo Wallpaper",
+        "Name": "Video Wallpaper",
         "Version": "0.1.0",
         "Website": "https://github.com/JOCKER3201/plasma-wideo-wallpaper"
     },

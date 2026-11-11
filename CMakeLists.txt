@@ -10,7 +10,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(DEPS REQUIRED IMPORTED_TARGET
     wayland-client wayland-egl egl mpv)
 
-# --- nagłówki protokołów Wayland (staging/color-management, stable/viewporter)
+# --- Wayland protocol headers (staging/color-management, stable/viewporter)
 find_program(WAYLAND_SCANNER wayland-scanner REQUIRED)
 pkg_get_variable(WP_DIR wayland-protocols pkgdatadir)
 set(GEN ${CMAKE_BINARY_DIR}/wl-gen)
@@ -43,19 +43,19 @@ qt_add_qml_module(hdrvideoplugin
         ${GEN}/viewporter-protocol.c
 )
 
-# Shim LD_PRELOAD dla plasmashell: ARGB okna -> ikony pulpitu nad wideem (place_below)
+# LD_PRELOAD shim for plasmashell: ARGB windows -> desktop icons above the video (place_below)
 add_library(hdrvideo-alpha SHARED src/alpha_preload.cpp)
 target_link_libraries(hdrvideo-alpha PRIVATE Qt6::Quick)
 
-# qmltyperegistrar nie wstawia include naszej klasy do wygenerowanej rejestracji —
-# wymuszamy nagłówek dla całego targetu.
+# qmltyperegistrar does not put an include of our class into the generated
+# registration — force the header for the whole target.
 target_compile_options(hdrvideoplugin PRIVATE
-    # SHELL: wyłącza deduplikację CMake — bez niej drugie "-include" znika
-    # i nagłówek trafia do clanga jako plik wejściowy ("multiple output files").
+    # SHELL: disables CMake's de-duplication — without it the second "-include"
+    # vanishes and the header reaches clang as an input file ("multiple output files").
     "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include ${CMAKE_SOURCE_DIR}/src/hdrvideosurface.h -include ${CMAKE_SOURCE_DIR}/src/hdrcapabilities.h>")
 
-# Chimera nie dostarcza targetu Qt6::GuiPrivate, ale nagłówki private są na dysku —
-# potrzebne wyłącznie dla qpa/qplatformnativeinterface.h (wl_surface okna).
+# Chimera does not ship a Qt6::GuiPrivate target, but the private headers are on
+# disk — needed solely for qpa/qplatformnativeinterface.h (the window's wl_surface).
 target_include_directories(hdrvideoplugin PRIVATE ${GEN}
     /usr/include/qt6/QtGui/${Qt6Gui_VERSION}
     /usr/include/qt6/QtGui/${Qt6Gui_VERSION}/QtGui

@@ -1,8 +1,9 @@
-// HdrVideoSurface — element QML renderujący wideo przez libmpv na wl_subsurface
-// umieszczonej POD oknem pulpitu plasmashell, z deklaracją BT.2020+PQ przez
-// wp-color-management-v1. Dzięki temu tapeta wideo jest prawdziwym HDR, ikony
-// pulpitu zostają na wierzchu (rysuje je bufor rodzica), a efekty KWin (Przegląd)
-// animują wszystko spójnie — subsurface jest częścią okna.
+// HdrVideoSurface — a QML item that renders video through libmpv onto a
+// wl_subsurface placed BELOW the plasmashell desktop window, declaring
+// BT.2020+PQ via wp-color-management-v1. This makes the video wallpaper true
+// HDR, the desktop icons stay on top (the parent's buffer draws them), and
+// KWin effects (Overview) animate everything consistently — the subsurface is
+// part of the window.
 #pragma once
 
 #include <QQuickItem>
@@ -59,7 +60,7 @@ private:
     void maybeStart();
     void stopWorker();
     void pushGeometry();
-    void setActiveHdr(bool v); // wołane z workera przez invokeMethod
+    void setActiveHdr(bool v); // called from the worker via invokeMethod
 
     struct Worker;
     std::unique_ptr<Worker> m_worker;

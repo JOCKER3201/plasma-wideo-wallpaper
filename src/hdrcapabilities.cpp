@@ -18,11 +18,11 @@ struct OutProbe {
     QString name;
     bool isPq = false;
     uint32_t maxLum = 0, refLum = 0;
-    bool done = false; // info done / failed / brak danych
+    bool done = false; // info done / failed / no data
 
-    // KWin raportuje tf wyjścia jako gamma22 nawet w trybie HDR (to preferowana
-    // przestrzeń klienta, nie sygnał łącza) — tryb HDR zdradzają luminancje:
-    // peak (max_lum) > bieli odniesienia SDR (reference_lum).
+    // KWin reports the output tf as gamma22 even in HDR mode (that is the
+    // preferred client space, not the link signal) — HDR mode is betrayed by
+    // the luminances: peak (max_lum) > SDR reference white (reference_lum).
     bool isHdr() const { return isPq || (maxLum > refLum && refLum > 0); }
 };
 
@@ -149,31 +149,31 @@ void HdrCapabilities::probe()
     p.dpy = wl_display_connect(nullptr);
     if (!p.dpy) {
         m_reason = QStringLiteral(
-            "HDR niedostępny: to nie jest sesja Wayland (tapeta HDR wymaga "
-            "Plasmy 6 na Waylandzie).");
+            "HDR unavailable: this is not a Wayland session (the HDR "
+            "wallpaper requires Plasma 6 on Wayland).");
         return;
     }
     m_wayland = true;
 
     wl_registry *reg = wl_display_get_registry(p.dpy);
     wl_registry_add_listener(reg, &regL, &p);
-    wl_display_roundtrip(p.dpy); // globale
-    wl_display_roundtrip(p.dpy); // supported_*, nazwy wyjść
+    wl_display_roundtrip(p.dpy); // globals
+    wl_display_roundtrip(p.dpy); // supported_*, output names
 
     if (!p.cm) {
         m_reason = QStringLiteral(
-            "HDR niedostępny: kompozytor nie udostępnia protokołu "
-            "wp-color-management-v1 (wymagany KWin z Plasmy ≥ 6.3).");
+            "HDR unavailable: the compositor does not expose the "
+            "wp-color-management-v1 protocol (KWin from Plasma ≥ 6.3 required).");
     } else if (!p.pq || !p.bt2020) {
         m_protocol = true;
         m_reason = QStringLiteral(
-            "HDR niedostępny: kompozytor nie deklaruje obsługi PQ (ST.2084) "
-            "i/lub prymarii BT.2020.");
+            "HDR unavailable: the compositor does not declare support for PQ "
+            "(ST.2084) and/or BT.2020 primaries.");
     } else {
         m_protocol = true;
         m_pq = true;
 
-        // tryb kolorymetrii każdego wyjścia
+        // colorimetry mode of each output
         for (auto &op : p.outs) {
             op->cmOut = wp_color_manager_v1_get_output(p.cm, op->out);
             op->desc =
@@ -199,20 +199,20 @@ void HdrCapabilities::probe()
         m_anyHdr = !hdr.isEmpty();
         if (!m_anyHdr) {
             m_reason = QStringLiteral(
-                "HDR nieaktywny: żaden ekran nie pracuje w trybie HDR. Włącz: "
-                "Ustawienia systemowe → Ekrany i monitory → HDR.");
+                "HDR inactive: no screen is running in HDR mode. Enable it in: "
+                "System Settings → Display & Monitor → HDR.");
         } else {
-            m_details = QStringLiteral("Ekrany w trybie HDR: %1.")
+            m_details = QStringLiteral("Screens in HDR mode: %1.")
                             .arg(hdr.join(QStringLiteral(", ")));
             if (!sdr.isEmpty())
                 m_details += QStringLiteral(
-                                 " Bez HDR: %1 — tam obraz zostanie "
-                                 "zmapowany do SDR.")
+                                 " Without HDR: %1 — there the image will "
+                                 "be mapped to SDR.")
                                  .arg(sdr.join(QStringLiteral(", ")));
         }
     }
 
-    // sprzątanie
+    // cleanup
     for (auto &op : p.outs) {
         if (op->info)
             wp_image_description_info_v1_destroy(op->info);

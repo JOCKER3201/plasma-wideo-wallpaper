@@ -1,5 +1,5 @@
 /*
-    SPDX-FileCopyrightText: 2026 JOCKER3201 <58137709+JOCKER3201@users.noreply.github.com>
+    SPDX-FileCopyrightText: 2026 JOCKER3201
 
     SPDX-License-Identifier: GPL-2.0-or-later
 
@@ -16,9 +16,16 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import QtQuick.Dialogs as QtDialogs
 import org.kde.kirigami as Kirigami
+import io.github.jocker3201.hdrvideo 1.0
 
 Kirigami.FormLayout {
     id: root
+
+    // Sonda możliwości HDR (protokół, PQ/BT.2020, tryb HDR ekranów) — gdy HDR
+    // nie może działać, opcje HDR są wyszarzone, a InlineMessage mówi dlaczego.
+    HdrCapabilities {
+        id: hdrCaps
+    }
 
     // Wyrównanie kolumn z pozostałymi FormLayoutami dialogu; "parentLayout" to
     // właściwość przodka o id "appearanceRoot" (kontekst dialogu), jak w org.kde.color.
@@ -88,6 +95,7 @@ Kirigami.FormLayout {
     QQC2.ComboBox {
         id: hdrModeComboBox
         Kirigami.FormData.label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Tryb HDR:")
+        enabled: hdrCaps.usable
         textRole: "label"
         valueRole: "value"
         // Wartości zgodne z kontraktem HdrVideoSurface.hdrMode: 0=auto, 1=force, 2=off.
@@ -103,6 +111,7 @@ Kirigami.FormLayout {
     QQC2.SpinBox {
         id: peakSpinBox
         Kirigami.FormData.label: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Jasność szczytowa (nity):")
+        enabled: hdrCaps.usable
         from: 100
         to: 10000
         stepSize: 50
@@ -118,6 +127,7 @@ Kirigami.FormLayout {
     QQC2.CheckBox {
         id: sdr2hdrCheckBox
         text: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "SDR→HDR (inverse tone mapping)")
+        enabled: hdrCaps.usable
         checked: root.cfg_Sdr2Hdr
         onToggled: root.cfg_Sdr2Hdr = checked
     }
@@ -127,6 +137,24 @@ Kirigami.FormLayout {
         text: i18nd("plasma_wallpaper_io.github.jocker3201.hdrvideo", "Dopasuj z pasami (contain)")
         checked: root.cfg_Contain
         onToggled: root.cfg_Contain = checked
+    }
+
+    Item {
+        Kirigami.FormData.isSection: true
+    }
+
+    // Dlaczego HDR nie działa (wyszarzone opcje wyżej) / status ekranów.
+    Kirigami.InlineMessage {
+        Layout.fillWidth: true
+        visible: !hdrCaps.usable
+        type: Kirigami.MessageType.Warning
+        text: hdrCaps.reason
+    }
+    Kirigami.InlineMessage {
+        Layout.fillWidth: true
+        visible: hdrCaps.usable && hdrCaps.details.length > 0
+        type: Kirigami.MessageType.Information
+        text: hdrCaps.details
     }
 
     QtDialogs.FileDialog {

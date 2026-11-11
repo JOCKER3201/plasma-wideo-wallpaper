@@ -27,7 +27,35 @@ tonemapuje do 8-bitowego sRGB.
 - Tryby: auto (detekcja `video-params` po `VIDEO_RECONFIG`), wymuszony HDR, SDR;
   `Sdr2Hdr` = inverse tone mapping; `Peak` = target-peak mpv; `Contain` = pasy.
 
-## Budowanie (Chimera Linux)
+## Wymagania
+
+- **Plasma 6 na Waylandzie** z KWin obsługującym `wp-color-management-v1`
+  (testowane na 6.8; protokół jest w KWin od ok. 6.3). Na X11 nie zadziała.
+- **libmpv** (0.38+), EGL, libwayland.
+- **HDR włączony dla ekranu** (Ustawienia systemowe → Ekrany) — bez tego KWin
+  tonemapuje tapetę do SDR (zagra, ale bez blasku). Konfiguracja tapety sama
+  to wykrywa: gdy HDR nie może działać (brak protokołu, brak PQ/BT.2020,
+  sesja X11, żaden ekran w trybie HDR), opcje HDR są wyszarzone, a na dole
+  formularza komunikat podaje dokładny powód (sonda `HdrCapabilities`;
+  uwaga: KWin raportuje tf wyjścia jako gamma22 nawet w HDR — tryb HDR
+  rozpoznajemy po luminancjach: peak > bieli odniesienia).
+- fp16 w torze zależy od sterownika (NVIDIA 5xx+, Mesa) — przy braku plugin
+  sam spada na 10/8 bit + dithering.
+- Do budowania: cmake, ninja, pkgconf + nagłówki: qt6-qtbase-devel,
+  qt6-qtdeclarative-devel, wayland-devel, wayland-protocols, mpv-devel,
+  nagłówki EGL (libglvnd-devel / mesa-devel — zależnie od dystrybucji).
+
+## Instalacja
+
+```sh
+./install.sh               # tapeta
+./install.sh --with-icons  # + ikony pulpitu nad wideem (wrapper plasmashell)
+```
+
+Po instalacji: wyloguj się i zaloguj, potem wybierz tapetę „Wideo Wallpaper".
+Odinstalowanie: `./uninstall.sh` (najpierw przełącz tapetę na inną).
+
+## Budowanie ręczne (Chimera Linux)
 
 ```sh
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release

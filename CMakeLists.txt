@@ -35,6 +35,8 @@ qt_add_qml_module(hdrvideoplugin
     SOURCES
         src/hdrvideosurface.h
         src/hdrvideosurface.cpp
+        src/hdrcapabilities.h
+        src/hdrcapabilities.cpp
         ${GEN}/color-management-v1-client-protocol.h
         ${GEN}/color-management-v1-protocol.c
         ${GEN}/viewporter-client-protocol.h
@@ -48,7 +50,9 @@ target_link_libraries(hdrvideo-alpha PRIVATE Qt6::Quick)
 # qmltyperegistrar nie wstawia include naszej klasy do wygenerowanej rejestracji —
 # wymuszamy nagłówek dla całego targetu.
 target_compile_options(hdrvideoplugin PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:-include;${CMAKE_SOURCE_DIR}/src/hdrvideosurface.h>")
+    # SHELL: wyłącza deduplikację CMake — bez niej drugie "-include" znika
+    # i nagłówek trafia do clanga jako plik wejściowy ("multiple output files").
+    "$<$<COMPILE_LANGUAGE:CXX>:SHELL:-include ${CMAKE_SOURCE_DIR}/src/hdrvideosurface.h -include ${CMAKE_SOURCE_DIR}/src/hdrcapabilities.h>")
 
 # Chimera nie dostarcza targetu Qt6::GuiPrivate, ale nagłówki private są na dysku —
 # potrzebne wyłącznie dla qpa/qplatformnativeinterface.h (wl_surface okna).

@@ -1,7 +1,7 @@
 /*
     SPDX-FileCopyrightText: 2026 JOCKER3201
 
-    SPDX-License-Identifier: GPL-2.0-or-later
+    SPDX-License-Identifier: MIT
 
     UI konfiguracji tapety "HDR Video" (io.github.jocker3201.hdrvideo).
 

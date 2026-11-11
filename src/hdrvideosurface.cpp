@@ -17,6 +17,16 @@
 #ifndef EGL_OPENGL_ES3_BIT
 #define EGL_OPENGL_ES3_BIT 0x0040
 #endif
+// EGL_EXT_pixel_format_float — bufor half-float (fp16): PQ zakodowane w fp16
+// daje ~12 bit efektywnej precyzji, banding znika bez ditheringu
+#ifndef EGL_COLOR_COMPONENT_TYPE_EXT
+#define EGL_COLOR_COMPONENT_TYPE_EXT 0x3339
+#define EGL_COLOR_COMPONENT_TYPE_FIXED_EXT 0x333A
+#define EGL_COLOR_COMPONENT_TYPE_FLOAT_EXT 0x333B
+#endif
+#ifndef GL_RGBA16F
+#define GL_RGBA16F 0x881A
+#endif
 
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
@@ -120,6 +130,7 @@ struct HdrVideoSurface::Worker
 
     bool hdrApplied = false;
     bool fileHdr = false;
+    bool fp16 = false;
     int curPxW = 0, curPxH = 0;
 
     // ------------------------------------------------ registry
@@ -234,6 +245,7 @@ struct HdrVideoSurface::Worker
             mpvOpt("tone-mapping", "clip");
             mpvOpt("hdr-compute-peak", "no");
             mpvOpt("inverse-tone-mapping", sdr2hdr ? "yes" : "no");
+            mpvOpt("dither-depth", fp16 ? "no" : "auto"); // fp16: dither zbędny
         } else {
             mpvOpt("target-prim", "auto");
             mpvOpt("target-trc", "auto");
@@ -241,6 +253,7 @@ struct HdrVideoSurface::Worker
             mpvOpt("tone-mapping", "spline");
             mpvOpt("hdr-compute-peak", "auto");
             mpvOpt("inverse-tone-mapping", "no");
+            mpvOpt("dither-depth", fp16 ? "no" : "auto");
         }
         if (hdrApplied != on) {
             hdrApplied = on;
@@ -320,20 +333,42 @@ struct HdrVideoSurface::Worker
             return;
         }
         eglBindAPI(EGL_OPENGL_ES_API);
+        struct Cand {
+            const char *name;
+            bool isFp16;
+            EGLint attrs[15];
+        };
+        const Cand cands[] = {
+            { "fp16 (half-float, RGB16F)", true,
+              { EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+                EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+                EGL_COLOR_COMPONENT_TYPE_EXT, EGL_COLOR_COMPONENT_TYPE_FLOAT_EXT,
+                EGL_RED_SIZE, 16, EGL_GREEN_SIZE, 16, EGL_BLUE_SIZE, 16,
+                EGL_ALPHA_SIZE, 0, EGL_NONE } },
+            { "fp16 (half-float, RGBA16F)", true,
+              { EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+                EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+                EGL_COLOR_COMPONENT_TYPE_EXT, EGL_COLOR_COMPONENT_TYPE_FLOAT_EXT,
+                EGL_RED_SIZE, 16, EGL_GREEN_SIZE, 16, EGL_BLUE_SIZE, 16,
+                EGL_ALPHA_SIZE, 16, EGL_NONE } },
+            { "10 bit na kanał", false,
+              { EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+                EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+                EGL_RED_SIZE, 10, EGL_GREEN_SIZE, 10, EGL_BLUE_SIZE, 10,
+                EGL_ALPHA_SIZE, 0, EGL_NONE } },
+            { "8 bit na kanał (dithering mpv)", false,
+              { EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+                EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+                EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
+                EGL_ALPHA_SIZE, 0, EGL_NONE } },
+        };
         EGLint n = 0;
-        const EGLint cfg10[] = { EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-                                 EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
-                                 EGL_RED_SIZE, 10, EGL_GREEN_SIZE, 10,
-                                 EGL_BLUE_SIZE, 10, EGL_ALPHA_SIZE, 0, EGL_NONE };
-        const EGLint cfg8[] = { EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-                                EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
-                                EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8,
-                                EGL_BLUE_SIZE, 8, EGL_ALPHA_SIZE, 0, EGL_NONE };
-        if (!eglChooseConfig(edpy, cfg10, &ecfg, 1, &n) || n < 1) {
-            eglChooseConfig(edpy, cfg8, &ecfg, 1, &n);
-            wlog("EGL: 8 bitów na kanał");
-        } else {
-            wlog("EGL: 10 bitów na kanał");
+        for (const Cand &c : cands) {
+            if (eglChooseConfig(edpy, c.attrs, &ecfg, 1, &n) && n >= 1) {
+                fp16 = c.isFp16;
+                wlog("EGL: %s", c.name);
+                break;
+            }
         }
         if (n < 1) {
             wlog("brak configu EGL");
@@ -490,7 +525,8 @@ struct HdrVideoSurface::Worker
                 drain(updR);
                 uint64_t fl = mpv_render_context_update(rctx);
                 if (fl & MPV_RENDER_UPDATE_FRAME) {
-                    mpv_opengl_fbo fbo = { 0, curPxW, curPxH, 0 };
+                    mpv_opengl_fbo fbo = { 0, curPxW, curPxH,
+                                           fp16 ? GL_RGBA16F : 0 };
                     int flip = 1;
                     mpv_render_param rr[] = {
                         { MPV_RENDER_PARAM_OPENGL_FBO, &fbo },
